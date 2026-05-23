@@ -1,4 +1,4 @@
-Create a Microsoft Fluent Design style icon presentation sheet for an "Internet Connection" icon.
+Create a Microsoft Fluent Design style icon presentation sheet for an icon.
 
 Layout:
 - Clean white background
