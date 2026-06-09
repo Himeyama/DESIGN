@@ -194,3 +194,60 @@ MyList.ItemsSource = ViewModel.Items;
 ```
 
 DataTemplate 内は `x:Bind` ではなく `{Binding}` を使う（DataType 指定は可）。
+
+## UI スレッドのブロックを防ぐ（async/await の注意点）
+
+WinUI3 で `async/await` を使っても、UI がフリーズする場合がある。
+
+### 原因
+
+`await` はデフォルトで **現在のスレッド（UI スレッド）に処理を戻す**。  
+サービス層のメソッド内で `ConfigureAwait(false)` を使わないと、HTTP 応答後の JSON パース・ファイル検索などの同期処理がすべて UI スレッドで実行されフリーズする。
+
+### 対策 1: サービス層では `ConfigureAwait(false)` を使う
+
+UI を持たないサービスクラスでは、すべての `await` に `.ConfigureAwait(false)` を付ける。  
+これにより継続処理がスレッドプールで実行され、UI スレッドを解放する。
+
+```csharp
+// NG: 継続が UI スレッドに戻り、後続の同期処理がフリーズを引き起こす
+var response = await _http.PostAsync(url, content, ct);
+
+// OK: スレッドプールで継続される
+var response = await _http.PostAsync(url, content, ct).ConfigureAwait(false);
+```
+
+### 対策 2: CPU バウンドな処理は `Task.Run` に移す
+
+ファイル I/O や正規表現など重い同期処理は `Task.Run` でスレッドプールに渡す。
+
+```csharp
+var result = await Task.Run(() => GrepService.Execute(pattern, path), ct).ConfigureAwait(false);
+```
+
+### 対策 3: UI 更新は `DispatcherQueue.TryEnqueue` を使う
+
+バックグラウンドスレッドから UI コントロールを直接操作すると例外になる。  
+`IProgress<T>` のコールバック内で `DispatcherQueue.TryEnqueue` を使って UI スレッドにマーシャルする。
+
+```csharp
+// Window や Page (DependencyObject) では this.DispatcherQueue プロパティを使う
+// GetForCurrentThread() は UI スレッドから呼ぶ必要があるが、
+// this.DispatcherQueue はどこからでも安全に参照できる
+var queue = this.DispatcherQueue;
+
+var progress = new Progress<string>(msg =>
+    queue.TryEnqueue(() => StatusText.Text = msg));
+
+// バックグラウンド処理から progress.Report() を呼ぶと自動的に UI スレッドで反映される
+await _service.RunAsync(progress, ct);
+```
+
+### ルールまとめ
+
+| 場所 | ルール |
+|---|---|
+| サービス・ライブラリ層 | `await` に必ず `ConfigureAwait(false)` |
+| CPU バウンド処理 | `await Task.Run(() => ...)` でスレッドプールへ |
+| UI 更新（バックグラウンドから） | `DispatcherQueue.TryEnqueue` 経由 |
+| UI 更新（コードビハインド内） | `ConfigureAwait(false)` を付けない（UI スレッドに戻る） |
