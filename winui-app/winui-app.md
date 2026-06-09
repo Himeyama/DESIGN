@@ -70,12 +70,9 @@ namespace MyApp;
 
 public partial class App : Application
 {
-    private Window? _window;
+    Window? _window;
 
-    public App()
-    {
-        InitializeComponent();
-    }
+    public App() => InitializeComponent();
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
@@ -211,10 +208,10 @@ UI を持たないサービスクラスでは、すべての `await` に `.Confi
 
 ```csharp
 // NG: 継続が UI スレッドに戻り、後続の同期処理がフリーズを引き起こす
-var response = await _http.PostAsync(url, content, ct);
+HttpResponseMessage response = await _http.PostAsync(url, content, ct);
 
 // OK: スレッドプールで継続される
-var response = await _http.PostAsync(url, content, ct).ConfigureAwait(false);
+HttpResponseMessage response = await _http.PostAsync(url, content, ct).ConfigureAwait(false);
 ```
 
 ### 対策 2: CPU バウンドな処理は `Task.Run` に移す
@@ -234,9 +231,9 @@ var result = await Task.Run(() => GrepService.Execute(pattern, path), ct).Config
 // Window や Page (DependencyObject) では this.DispatcherQueue プロパティを使う
 // GetForCurrentThread() は UI スレッドから呼ぶ必要があるが、
 // this.DispatcherQueue はどこからでも安全に参照できる
-var queue = this.DispatcherQueue;
+DispatcherQueue queue = this.DispatcherQueue;
 
-var progress = new Progress<string>(msg =>
+Progress<string> progress = new(msg =>
     queue.TryEnqueue(() => StatusText.Text = msg));
 
 // バックグラウンド処理から progress.Report() を呼ぶと自動的に UI スレッドで反映される
@@ -251,3 +248,129 @@ await _service.RunAsync(progress, ct);
 | CPU バウンド処理 | `await Task.Run(() => ...)` でスレッドプールへ |
 | UI 更新（バックグラウンドから） | `DispatcherQueue.TryEnqueue` 経由 |
 | UI 更新（コードビハインド内） | `ConfigureAwait(false)` を付けない（UI スレッドに戻る） |
+
+## C# コーディングスタイル
+
+### 型は var を使わず明示的に書く
+
+```csharp
+// NG
+var models = new List<string>();
+var response = await _http.GetStringAsync(url, ct);
+
+// OK
+List<string> models = new();
+string response = await _http.GetStringAsync(url, ct);
+```
+
+### 宣言は `型 変数 = new();` を原則とする
+
+```csharp
+// NG
+var picker = new FolderPicker();
+var dialog = new ContentDialog { Title = "Error" };
+
+// OK
+FolderPicker picker = new();
+ContentDialog dialog = new() { Title = "Error" };
+```
+
+### using はファイル先頭の宣言形式のみ使用し、不要なものは削除する
+
+```csharp
+// NG: ブロック using（ネスト）
+using (var stream = File.OpenRead(path))
+{
+    // ...
+}
+
+// OK: 宣言形式
+using FileStream stream = File.OpenRead(path);
+```
+
+### リスト・配列はコレクション式を使う
+
+```csharp
+// NG
+var list = new List<string>();
+return new JsonArray { ... };
+
+// OK
+List<string> list = [];
+return [item1, item2];
+```
+
+### `private` は省略する（デフォルトが private のため）
+
+```csharp
+// NG
+private readonly OllamaService _ollama = new();
+private CancellationTokenSource? _cts;
+private void OnClick(object sender, RoutedEventArgs e) { ... }
+
+// OK
+readonly OllamaService _ollama = new();
+CancellationTokenSource? _cts;
+void OnClick(object sender, RoutedEventArgs e) { ... }
+```
+
+### 単純な関数・ゲッター・セッターはラムダ式で簡潔に書く
+
+```csharp
+// NG
+void RefreshButton_Click(object sender, RoutedEventArgs e)
+{
+    _ = LoadAsync();
+}
+
+// OK
+void RefreshButton_Click(object sender, RoutedEventArgs e) => _ = LoadAsync();
+```
+
+### 型の比較はパターンマッチングを使う
+
+```csharp
+// NG
+var model = ComboBox.SelectedItem as string;
+if (model == null) return;
+
+// OK
+if (ComboBox.SelectedItem is not string model) return;
+```
+
+### null チェックは `?` を使う
+
+```csharp
+// NG
+if (_cts != null) _cts.Cancel();
+
+// OK
+_cts?.Cancel();
+```
+
+### switch は switch 式で簡潔に書く
+
+```csharp
+// NG
+string result;
+switch (outputMode)
+{
+    case "count": result = "件数"; break;
+    case "content": result = "内容"; break;
+    default: result = "ファイル"; break;
+}
+
+// OK
+string result = outputMode switch
+{
+    "count" => "件数",
+    "content" => "内容",
+    _ => "ファイル"
+};
+```
+
+### Nullable を有効にする（csproj）
+
+```xml
+<Nullable>enable</Nullable>
+```
