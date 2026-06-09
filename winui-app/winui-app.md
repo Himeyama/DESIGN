@@ -85,7 +85,38 @@ public partial class App : Application
 }
 ```
 
-## ステップ 4: カスタムタイトルバー（任意）
+## ステップ 4: Grid の行列定義（ショートハンド）
+
+`<Grid.RowDefinitions>` ブロックの代わりに、属性形式で簡潔に書ける。
+
+```xml
+<!-- 従来の書き方 -->
+<Grid>
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+    ...
+</Grid>
+
+<!-- ショートハンド -->
+<Grid RowDefinitions="Auto,*">
+    ...
+</Grid>
+```
+
+列定義も同様。
+
+```xml
+<!-- ショートハンド -->
+<Grid ColumnDefinitions="170,Auto,*,Auto">
+    ...
+</Grid>
+```
+
+値には `Auto`、`*`、`2*`、固定値（`170` など）が使える。
+
+## ステップ 5: カスタムタイトルバー（任意）
 
 `ExtendsContentIntoTitleBar = true` + `SetTitleBar()` でカスタムタイトルバーを実装する。
 Mica 背景がタイトルバーまで拡張されてモダンな外観になる。
