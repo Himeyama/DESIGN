@@ -1,0 +1,165 @@
+# WinUI3 アプリ作成スキル
+
+description: WinUI3 デスクトップアプリを dotnet CLI のみで作成・起動する手順
+
+## 概要
+WinUI3 アプリを作成するスキル。
+Windows App SDK の Bootstrapper API を使うことで、MSIX パッケージ不要で動作する。
+
+## 前提条件
+
+- .NET 9 SDK（`dotnet --version` で確認）
+- Windows 10 22H2 以降
+
+## ステップ 1: プロジェクト生成
+
+```bash
+dotnet new winui -n MyApp
+cd MyApp
+```
+
+## ステップ 2: csproj を修正
+
+生成された csproj から不要な設定を削除し、以下の最小構成にする。
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>MyApp</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\*.png" />
+    <Content Include="Assets\*.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.1839" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.1.3" />
+  </ItemGroup>
+</Project>
+```
+
+**重要なポイント:**
+- `RuntimeIdentifier=win-x64` を明示する（AnyCPU だとビルドエラー）
+- `WindowsAppSDKSelfContained=true` + `SelfContained=true` が核心。これにより Windows App SDK ランタイムが exe に同梱され、COM 登録不要・Program.cs 不要で動作する
+
+## ステップ 3: App.xaml.cs を簡潔にする
+
+テンプレートが生成する不要な using を削除する。Program.cs は不要。
+
+```csharp
+// App.xaml.cs
+using Microsoft.UI.Xaml;
+
+namespace MyApp;
+
+public partial class App : Application
+{
+    private Window? _window;
+
+    public App()
+    {
+        InitializeComponent();
+    }
+
+    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    {
+        _window = new MainWindow();
+        _window.Activate();
+    }
+}
+```
+
+## ステップ 4: カスタムタイトルバー（任意）
+
+`ExtendsContentIntoTitleBar = true` + `SetTitleBar()` でカスタムタイトルバーを実装する。
+Mica 背景がタイトルバーまで拡張されてモダンな外観になる。
+
+**MainWindow.xaml:**
+
+```xml
+<Window ...>
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- タイトルバー領域: SetTitleBar() に渡す要素 -->
+        <Grid x:Name="TitleBarGrid" Grid.Row="0" Height="48" Background="Transparent">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                        Margin="16,0,0,0" Spacing="8">
+                <FontIcon Glyph="&#xE8B7;" FontSize="16" VerticalAlignment="Center" />
+                <TextBlock Text="My App" Style="{ThemeResource CaptionTextBlockStyle}"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+
+        <!-- コンテンツ -->
+        <StackPanel Grid.Row="1" Padding="20" Spacing="15">
+            <!-- UI をここに書く -->
+        </StackPanel>
+    </Grid>
+</Window>
+```
+
+**MainWindow.xaml.cs:**
+
+```csharp
+public MainWindow()
+{
+    InitializeComponent();
+
+    AppWindow.SetIcon("Assets/AppIcon.ico");
+    ExtendsContentIntoTitleBar = true;
+    SetTitleBar(TitleBarGrid);
+}
+```
+
+## ステップ 5: ビルドと起動
+
+```bash
+dotnet build -c Debug
+./bin/Debug/net9.0-windows10.0.26100.0/win-x64/MyApp.exe
+```
+
+## トラブルシューティング
+
+| エラー | 原因 | 対処 |
+|---|---|---|
+| `REGDB_E_CLASSNOTREG (0x80040154)` | `Bootstrap.Initialize` を呼んでいない | Program.cs を上記の通り作成する |
+| `CS0017: 複数のエントリポイント` | `DISABLE_XAML_GENERATED_MAIN` が未定義 | csproj に `<DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>` を追加 |
+| `AnyCPU` ビルドエラー | RuntimeIdentifier 未指定 | csproj に `<RuntimeIdentifier>win-x64</RuntimeIdentifier>` を追加 |
+| `SetTitleBar` が `FrameworkElement` を要求 | Window 直下で `x:Bind` を使っている | Window 直下の要素に `x:Bind` を使わない。DataContext はコードビハインドで設定する |
+
+## MVVM パターンのバインディング注意点
+
+WinUI3 の `x:Bind` は Window クラスに対しては `SetConverterLookupRoot` で `FrameworkElement` を要求するためコンパイルエラーになる。
+Window 直下では `x:Bind` を避け、コードビハインドで `ItemsSource` などを直接設定する。
+
+```csharp
+// NG: MainWindow.xaml で <ListBox ItemsSource="{x:Bind ViewModel.Items}" />
+// OK: コードビハインドで設定
+MyList.ItemsSource = ViewModel.Items;
+```
+
+DataTemplate 内は `x:Bind` ではなく `{Binding}` を使う（DataType 指定は可）。
