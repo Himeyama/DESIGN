@@ -1,3 +1,8 @@
+---
+name: powershell-scripting
+description: PowerShell 7 (Core) のスクリプト設計原則。安全性・エラー処理・引数解析など。
+---
+
 # PowerShell Script Design Guide
 
 堅牢で保守性の高い PowerShell スクリプトの設計原則。PowerShell 7 (Core) 以降を前提とする。

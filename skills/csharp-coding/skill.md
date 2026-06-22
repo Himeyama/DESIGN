@@ -1,3 +1,8 @@
+---
+name: csharp-coding
+description: .NET 8+ / C# 12+ のコーディング規約。明示的型・nullable・パターンマッチング・LINQ・async など。
+---
+
 # C# Coding Guidelines
 
 Target: .NET 8+ / C# 12+.

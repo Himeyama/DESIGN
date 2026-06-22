@@ -1,6 +1,9 @@
-# WinUI3 アプリ作成スキル
+---
+name: winui3-app
+description: dotnet CLI のみで WinUI3 デスクトップアプリを作成・起動する手順。
+---
 
-description: WinUI3 デスクトップアプリを dotnet CLI のみで作成・起動する手順
+# WinUI3 アプリ作成スキル
 
 ## 概要
 WinUI3 アプリを作成するスキル。

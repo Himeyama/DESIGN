@@ -1,3 +1,8 @@
+---
+name: web-style
+description: 個人プロジェクト向けのウェブサイトデザイン方針。レイアウト・フォント・配色など。
+---
+
 # Website Design Style
 
 ## Layout

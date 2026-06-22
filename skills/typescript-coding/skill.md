@@ -1,3 +1,8 @@
+---
+name: typescript-coding
+description: 可読性を重視した TypeScript の規約。型定義・非同期・エラー処理など。
+---
+
 # TypeScript Coding Guidelines
 
 ## Principles

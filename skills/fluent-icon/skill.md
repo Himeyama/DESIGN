@@ -1,3 +1,8 @@
+---
+name: fluent-icon
+description: Microsoft Fluent Design スタイルのアイコンシートを生成する画像プロンプト。
+---
+
 Create a Microsoft Fluent Design style icon presentation sheet for an icon.
 
 Layout:

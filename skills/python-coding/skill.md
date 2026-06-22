@@ -1,3 +1,8 @@
+---
+name: python-coding
+description: Python 3.13+ のコーディング規約。uv・型ヒント・dataclass・async (TaskGroup)・pytest など。
+---
+
 # Python Coding Guidelines
 
 Target: Python 3.13+.

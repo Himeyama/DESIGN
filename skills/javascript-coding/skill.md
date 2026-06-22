@@ -1,3 +1,8 @@
+---
+name: javascript-coding
+description: Node.js アプリケーションの設計原則。エラー処理・引数解析・ログ・シグナル処理など。
+---
+
 # JavaScript (Node.js) Design Guide
 
 堅牢で保守性の高い JavaScript (Node.js) アプリケーションの設計原則。

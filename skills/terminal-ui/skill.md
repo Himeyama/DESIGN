@@ -1,3 +1,8 @@
+---
+name: terminal-ui
+description: JavaScript でターミナル UI を実装するガイド。OSC 8 リンク・プログレスバー・スピナーなど。
+---
+
 # ターミナル UI
 
 ## 1. クリッカブルリンク（OSC 8）

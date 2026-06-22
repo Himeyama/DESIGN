@@ -1,3 +1,8 @@
+---
+name: shell-scripting
+description: bash の堅牢なスクリプト設計原則。安全性・ログ・引数解析・エラー処理など。
+---
+
 # Shell Script Design Guide
 
 堅牢で保守性の高いシェルスクリプトの設計原則。
