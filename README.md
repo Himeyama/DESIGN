@@ -19,7 +19,8 @@ skills/
 ├── web-style/              ウェブサイトデザインスタイル
 ├── fluent-icon/            Fluent Design アイコン作成
 ├── log-design/             ログ設計
-└── winui3-app/             WinUI3 デスクトップアプリ作成
+├── winui3-app/             WinUI3 デスクトップアプリ作成
+└── cloudformation-template/ AWS CloudFormation テンプレート設計
 ```
 
 各スキルフォルダの構成：

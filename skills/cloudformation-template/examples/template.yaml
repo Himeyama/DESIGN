@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  S3 バケットと EC2 インスタンスを作成するサンプルテンプレート。
+  Parameters / Mappings / Conditions / 組み込み関数 / Outputs の基本を網羅する。
+
+# ====================
+# Metadata
+# ====================
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: 環境設定
+        Parameters:
+          - EnvironmentName
+          - InstanceType
+
+# ====================
+# Parameters
+# ====================
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: デプロイ環境名
+
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    AllowedValues: [t3.micro, t3.small, t3.medium]
+    ConstraintDescription: 許可されたインスタンスタイプを指定してください
+
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: SSH 接続に使う既存のキーペア名
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: インスタンスを配置する VPC
+
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: インスタンスを配置するサブネット
+
+# ====================
+# Mappings
+# ====================
+Mappings:
+  RegionMap:
+    ap-northeast-1:
+      AMI: ami-0123456789abcdef0
+    us-east-1:
+      AMI: ami-0fedcba9876543210
+
+# ====================
+# Conditions
+# ====================
+Conditions:
+  IsProd: !Equals [!Ref EnvironmentName, prod]
+
+# ====================
+# Resources
+# ====================
+Resources:
+  AppBucket:
+    Type: AWS::S3::Bucket
+    # データを持つリソースは削除・置換時に保持する
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "${EnvironmentName} app instance SG"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  AppInstance:
+    Type: AWS::EC2::Instance
+    DependsOn: AppBucket
+    Properties:
+      # 本番のみ大きめのインスタンスにする
+      InstanceType: !If [IsProd, t3.large, !Ref InstanceType]
+      ImageId: !FindInMap [RegionMap, !Ref "AWS::Region", AMI]
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-app-instance"
+
+# ====================
+# Outputs
+# ====================
+Outputs:
+  BucketName:
+    Description: 作成したバケット名
+    Value: !Ref AppBucket
+
+  BucketArn:
+    Description: 作成したバケットの ARN
+    Value: !GetAtt AppBucket.Arn
+
+  InstanceId:
+    Description: 作成した EC2 インスタンス ID
+    Value: !Ref AppInstance
+    Export:
+      Name: !Sub "${AWS::StackName}-InstanceId"
+
+  InstancePublicIp:
+    Description: インスタンスのパブリック IP
+    Value: !GetAtt AppInstance.PublicIp
