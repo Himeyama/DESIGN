@@ -55,18 +55,20 @@ PowerShell 7 が無い場合は `winget install Microsoft.PowerShell`（Windows�
 pwsh ./scripts/install.ps1 -Scope Project -Skills csharp-coding,shell-scripting -Force
 ```
 
-macOS / Linux の場合は bash 版のインストーラーも利用できます（`jq` が必要です）。
+macOS / Linux の場合は bash 版のインストーラーも利用できます。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Himeyama/DESIGN/main/scripts/install.sh -o install.sh
-bash ./install.sh
+curl -fsSL https://raw.githubusercontent.com/Himeyama/DESIGN/main/scripts/install.sh | bash
 ```
 
-`jq` が無い場合は `brew install jq`（macOS）や `apt install jq`（Debian/Ubuntu）などでインストールしてください。
+`jq` が必要ですが、未インストールの場合は自動でのインストールを試みます
+（`brew` / `apt` / `dnf` / `yum` / `pacman` / `apk` / `zypper` のいずれかが必要です）。
 
 > [!NOTE]
-> PowerShell 版と同様に、標準入力経由でスクリプト全体を渡す方法（`curl ... | bash`）は
-> 対話的な選択 UI が使えないため動作しません。上記のように一度ファイルに保存してから実行してください。
+> `curl ... | bash` のように標準入力経由でスクリプトを渡しても、対話的な選択 UI は
+> `/dev/tty`（制御端末）から直接キー入力を読み取るため問題なく動作します。
+> ただし cron などの制御端末が無い環境では使えないため、その場合は `--skills` /
+> `--scope` を指定した非対話実行を利用してください。
 
 スキル名や配置先をあらかじめ指定して非対話で実行することもできます（CI などでも利用可能）。
 

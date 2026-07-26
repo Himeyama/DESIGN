@@ -9,8 +9,19 @@
 #
 # jq が必要です。未インストールの場合は自動でのインストールを試みます
 # （brew / apt / dnf / yum / pacman / apk / zypper のいずれかが必要）。
+#
+# `curl ... | bash` のようにパイプ経由で実行すると標準入力(fd 0)はスクリプト
+# 本体の読み込みに使われてしまうため、対話 UI 用のキー入力は /dev/tty (fd 3)
+# から直接読む。制御端末が無い環境（cron 等）では HAS_TTY=0 となり、
+# --skills / --scope による非対話実行が必要になる。
 
 set -euo pipefail
+
+if exec 3<>/dev/tty 2>/dev/null; then
+    HAS_TTY=1
+else
+    HAS_TTY=0
+fi
 
 REPO_OWNER="Himeyama"
 REPO_NAME="DESIGN"
@@ -112,9 +123,9 @@ select_skills() {
         done
 
         local key rest
-        IFS= read -rsn1 key
+        IFS= read -rsn1 key <&3
         if [[ $key == $'\x1b' ]]; then
-            IFS= read -rsn2 -t 0.01 rest || true
+            IFS= read -rsn2 -t 0.01 rest <&3 || true
             key+="$rest"
         fi
 
@@ -138,7 +149,7 @@ select_skills() {
                 for ((i = 0; i < n; i++)); do
                     [[ ${selected[i]} -eq 1 ]] && result_ref+=("${names_ref[i]}")
                 done
-                return
+                return 0
                 ;;
         esac
     done
@@ -162,9 +173,9 @@ select_single_option() {
         done
 
         local key rest
-        IFS= read -rsn1 key
+        IFS= read -rsn1 key <&3
         if [[ $key == $'\x1b' ]]; then
-            IFS= read -rsn2 -t 0.01 rest || true
+            IFS= read -rsn2 -t 0.01 rest <&3 || true
             key+="$rest"
         fi
 
@@ -173,7 +184,7 @@ select_single_option() {
             $'\x1b[B'|j|J) cursor=$(( (cursor + 1) % n )) ;;
             ""|$'\n'|$'\r')
                 echo "${labels_ref[cursor]}"
-                return
+                return 0
                 ;;
         esac
     done
@@ -183,17 +194,8 @@ get_destination_root() {
     local chosen_scope="$SCOPE"
 
     if [[ -z "$chosen_scope" ]]; then
-        if [[ ! -t 0 ]]; then
-            local answer
-            while true; do
-                read -rp "インストール先を選択してください [user/project]: " answer
-                [[ "$answer" == "user" || "$answer" == "project" ]] && break
-            done
-            chosen_scope="$answer"
-        else
-            local -a labels=("user" "project")
-            chosen_scope="$(select_single_option "インストール先を選択してください" labels)"
-        fi
+        local -a labels=("user" "project")
+        chosen_scope="$(select_single_option "インストール先を選択してください" labels)"
     fi
 
     if [[ "$chosen_scope" == "user" ]]; then
@@ -209,8 +211,10 @@ install_skill() {
     local dest_dir="$destination_root/$name"
 
     if [[ -e "$dest_dir" && $FORCE -eq 0 ]]; then
-        local answer
-        read -rp "既に存在します: $dest_dir を上書きしますか？ [y/N]: " answer
+        local answer=""
+        if [[ $HAS_TTY -eq 1 ]]; then
+            read -rp "既に存在します: $dest_dir を上書きしますか？ [y/N]: " answer <&3
+        fi
         if [[ "$answer" != "y" && "$answer" != "Y" ]]; then
             echo "スキップ: $name"
             return 1
@@ -268,9 +272,8 @@ if [[ -n "$SKILLS" ]]; then
     if [[ ${#missing[@]} -gt 0 ]]; then
         echo "警告: 存在しないスキル名を無視しました: ${missing[*]}" >&2
     fi
-elif [[ ! -t 0 ]]; then
-    echo "対話的な選択には端末の標準入力が必要です。標準入力経由でスクリプト全体を渡す方法では選択 UI が使えません。代わりに次のいずれかを使ってください:" >&2
-    echo "  curl -fsSL $RAW_ROOT/scripts/install.sh -o install.sh; bash ./install.sh" >&2
+elif [[ $HAS_TTY -eq 0 ]]; then
+    echo "対話的な選択には制御端末 (/dev/tty) が必要です。cron などの非対話環境では使えません。代わりに次のいずれかを使ってください:" >&2
     echo "  bash ./scripts/install.sh --skills <name1>,<name2>" >&2
     exit 1
 else
