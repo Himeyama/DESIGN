@@ -7,7 +7,8 @@
 #   ./scripts/install.sh --scope user
 #   ./scripts/install.sh --scope project --skills csharp-coding,shell-scripting --force
 #
-# jq が必要です（brew install jq / apt install jq など）。
+# jq が必要です。未インストールの場合は自動でのインストールを試みます
+# （brew / apt / dnf / yum / pacman / apk / zypper のいずれかが必要）。
 
 set -euo pipefail
 
@@ -47,9 +48,41 @@ if [[ -n "$SCOPE" && "$SCOPE" != "user" && "$SCOPE" != "project" ]]; then
     exit 1
 fi
 
+install_jq() {
+    echo "jq が見つかりません。インストールを試みます..." >&2
+
+    local sudo_cmd=""
+    if [[ $EUID -ne 0 ]] && command -v sudo >/dev/null 2>&1; then
+        sudo_cmd="sudo"
+    fi
+
+    if command -v brew >/dev/null 2>&1; then
+        brew install jq
+    elif command -v apt-get >/dev/null 2>&1; then
+        $sudo_cmd apt-get update && $sudo_cmd apt-get install -y jq
+    elif command -v dnf >/dev/null 2>&1; then
+        $sudo_cmd dnf install -y jq
+    elif command -v yum >/dev/null 2>&1; then
+        $sudo_cmd yum install -y jq
+    elif command -v pacman >/dev/null 2>&1; then
+        $sudo_cmd pacman -Sy --noconfirm jq
+    elif command -v apk >/dev/null 2>&1; then
+        $sudo_cmd apk add jq
+    elif command -v zypper >/dev/null 2>&1; then
+        $sudo_cmd zypper install -y jq
+    else
+        echo "対応するパッケージマネージャーが見つかりませんでした。jq を手動でインストールしてください（brew install jq / apt install jq など）。" >&2
+        exit 1
+    fi
+}
+
 if ! command -v jq >/dev/null 2>&1; then
-    echo "jq が必要です。インストールしてください（brew install jq / apt install jq など）。" >&2
-    exit 1
+    install_jq
+    if ! command -v jq >/dev/null 2>&1; then
+        echo "jq のインストールに失敗しました。手動でインストールしてください。" >&2
+        exit 1
+    fi
+    echo "jq をインストールしました。" >&2
 fi
 
 get_github_directory() {
