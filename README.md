@@ -54,3 +54,22 @@ PowerShell 7 が無い場合は `winget install Microsoft.PowerShell`（Windows�
 ```powershell
 pwsh ./scripts/install.ps1 -Scope Project -Skills csharp-coding,shell-scripting -Force
 ```
+
+macOS / Linux の場合は bash 版のインストーラーも利用できます（`jq` が必要です）。
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Himeyama/DESIGN/main/scripts/install.sh -o install.sh
+bash ./install.sh
+```
+
+`jq` が無い場合は `brew install jq`（macOS）や `apt install jq`（Debian/Ubuntu）などでインストールしてください。
+
+> [!NOTE]
+> PowerShell 版と同様に、標準入力経由でスクリプト全体を渡す方法（`curl ... | bash`）は
+> 対話的な選択 UI が使えないため動作しません。上記のように一度ファイルに保存してから実行してください。
+
+スキル名や配置先をあらかじめ指定して非対話で実行することもできます（CI などでも利用可能）。
+
+```bash
+bash ./scripts/install.sh --scope project --skills csharp-coding,shell-scripting --force
+```
