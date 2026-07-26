@@ -79,14 +79,51 @@
         }
     }
 
+    function Select-SingleOption {
+        param(
+            [string]$Title,
+            [string[]]$Labels
+        )
+
+        $cursor = 0
+
+        function Write-Menu {
+            Clear-Host
+            Write-Host "$Title (↑/↓: 移動, Enter: 決定)"
+            Write-Host ""
+            for ($i = 0; $i -lt $Labels.Count; $i++) {
+                $prefix = if ($i -eq $cursor) { ">" } else { " " }
+                Write-Host "$prefix $($Labels[$i])"
+            }
+        }
+
+        while ($true) {
+            Write-Menu
+            $key = [Console]::ReadKey($true)
+            switch ($key.Key) {
+                "UpArrow" { $cursor = ($cursor - 1 + $Labels.Count) % $Labels.Count }
+                "K" { $cursor = ($cursor - 1 + $Labels.Count) % $Labels.Count }
+                "DownArrow" { $cursor = ($cursor + 1) % $Labels.Count }
+                "J" { $cursor = ($cursor + 1) % $Labels.Count }
+                "Enter" { return $cursor }
+            }
+        }
+    }
+
     function Get-DestinationRoot {
         param([string]$ChosenScope)
 
         if (-not $ChosenScope) {
-            do {
-                $answer = Read-Host "インストール先を選択してください [User/Project]"
-            } while ($answer -notin @("User", "Project"))
-            $ChosenScope = $answer
+            if ([Console]::IsInputRedirected) {
+                do {
+                    $answer = Read-Host "インストール先を選択してください [User/Project]"
+                } while ($answer -notin @("User", "Project"))
+                $ChosenScope = $answer
+            }
+            else {
+                $index = Select-SingleOption -Title "インストール先を選択してください" -Labels @("User", "Project")
+                $ChosenScope = @("User", "Project")[$index]
+            }
         }
 
         if ($ChosenScope -eq "User") {
