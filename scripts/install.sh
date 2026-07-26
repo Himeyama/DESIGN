@@ -156,6 +156,8 @@ select_skills() {
 }
 
 # 単一選択 UI。$1: タイトル, $2: 選択肢名を格納した配列変数名, 標準出力に選ばれたラベルを出力
+# 呼び出し元が結果をコマンド置換 $(...) で受け取る想定のため、メニュー描画は
+# 標準出力ではなく端末 (fd 3) に直接書き、標準出力には最終結果のみ出力する。
 select_single_option() {
     local title="$1"
     local -n labels_ref="$2"
@@ -163,13 +165,13 @@ select_single_option() {
     local i cursor=0
 
     while true; do
-        clear
-        echo "$title (↑/↓: 移動, Enter: 決定)"
-        echo
+        clear >&3
+        echo "$title (↑/↓: 移動, Enter: 決定)" >&3
+        echo >&3
         for ((i = 0; i < n; i++)); do
             local prefix=" "
             [[ $i -eq $cursor ]] && prefix=">"
-            echo "$prefix ${labels_ref[i]}"
+            echo "$prefix ${labels_ref[i]}" >&3
         done
 
         local key rest
@@ -194,6 +196,10 @@ get_destination_root() {
     local chosen_scope="$SCOPE"
 
     if [[ -z "$chosen_scope" ]]; then
+        if [[ $HAS_TTY -eq 0 ]]; then
+            echo "対話的な選択には制御端末 (/dev/tty) が必要です。--scope user か --scope project を指定してください。" >&2
+            exit 1
+        fi
         local -a labels=("user" "project")
         chosen_scope="$(select_single_option "インストール先を選択してください" labels)"
     fi
