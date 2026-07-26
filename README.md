@@ -32,3 +32,25 @@ skills/
 新しくコードやウェブページを書くときに、対象に応じたスキルの `skill.md` を参照してください。
 AI エージェントに作業を依頼する場合は、該当するスキルを読み込ませることで、
 このリポジトリの規約に沿った出力が得られます。
+
+## インストール
+
+以下のコマンドで、登録したいスキルを対話的に選択して Claude Code のスキルディレクトリ
+（`~/.claude/skills` または `./.claude/skills`）にインストールできます（PowerShell 7 が必要です）。
+
+```powershell
+pwsh -c "irm https://raw.githubusercontent.com/Himeyama/DESIGN/main/scripts/install.ps1 | iex"
+```
+
+PowerShell 7 が無い場合は `winget install Microsoft.PowerShell`（Windows）や
+`brew install --cask powershell`（macOS）などでインストールしてください。
+
+> [!NOTE]
+> `curl ... | pwsh -c -` のように標準入力経由でスクリプトを渡す方法は、対話的な選択 UI が
+> 標準入力を使えなくなるため動作しません。上記の `irm | iex` 形式を使ってください。
+
+スキル名や配置先をあらかじめ指定して非対話で実行することもできます（CI などでも利用可能）。
+
+```powershell
+pwsh ./scripts/install.ps1 -Scope Project -Skills csharp-coding,shell-scripting -Force
+```
