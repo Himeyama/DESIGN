@@ -75,3 +75,30 @@ curl -fsSL https://raw.githubusercontent.com/Himeyama/DESIGN/main/scripts/instal
 ```bash
 bash ./scripts/install.sh --scope project --skills csharp-coding,shell-scripting --force
 ```
+
+## Playwright MCP のセットアップ
+
+Claude Code に Playwright MCP（ブラウザ自動操作）を導入・設定する PowerShell スクリプトです。
+`npx`（Node.js）や `claude` コマンドが無い場合は自動でインストールし、`@playwright/mcp` の
+最新安定版バージョンを固定した上で `claude mcp add` を実行します（PowerShell 7 が必要です）。
+
+```powershell
+pwsh ./scripts/install-playwright-mcp.ps1
+```
+
+スコープ（プロジェクト/ユーザー）やバージョンをあらかじめ指定して非対話で実行することもできます。
+
+```powershell
+pwsh ./scripts/install-playwright-mcp.ps1 -Scope Project -PlaywrightVersion 0.0.79
+```
+
+macOS / Linux の場合は bash 版も利用できます。
+
+```bash
+./scripts/install-playwright-mcp.sh
+./scripts/install-playwright-mcp.sh --scope project --playwright-version 0.0.79
+```
+
+> [!NOTE]
+> 追加した MCP サーバーは現在のセッションには反映されないため、実行後は Claude Code の
+> 再起動が必要です。
