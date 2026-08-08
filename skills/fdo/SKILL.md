@@ -60,11 +60,7 @@ Release Candidate
 * 静的解析
 * セキュリティチェック
 * パフォーマンス確認
-
-### Step 5: Human Approval
-
-* 差分レビュー
-* 承認記録
+* 独立レビュー: `Skill(aidd)` を実行した文脈を引き継がない別のエージェント（`Agent` ツールで新規起動、または `code-review` スキル）に差分をレビューさせる。実装担当が自分の成果物を採点しない。
 * リリース判定
 
 ## Quality Gates
@@ -76,7 +72,7 @@ Release Candidate
 | Build Gate    | ビルド成功     |
 | Quality Gate  | 全テスト成功    |
 | Security Gate | 重大脆弱性なし   |
-| Review Gate   | 人間承認済み    |
+| Review Gate   | 独立レビュー合格  |
 
 ## Failure Handling
 
@@ -84,7 +80,7 @@ Release Candidate
 * Test失敗 → Test Generationへ戻る
 * Build失敗 → AI Implementationへ戻る
 * Verification失敗 → 該当工程へ戻る
-* Review却下 → AI Implementationへ戻る
+* Review不合格 → AI Implementationへ戻る
 
 ## Required Artifacts
 
@@ -104,7 +100,6 @@ stages:
   - test
   - build
   - verify
-  - review
 ```
 
 ## Audit Requirements
@@ -114,12 +109,10 @@ stages:
 * 仕様バージョン
 * テスト結果
 * AI生成コミット
-* レビュー担当者
-* 承認日時
+* 独立レビュー結果
 
 ## Completion Criteria
 
 * 全品質ゲート通過
 * 監査ログ保存済み
 * リリース候補生成済み
-* 人間承認済み
