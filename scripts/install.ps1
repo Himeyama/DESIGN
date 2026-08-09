@@ -151,10 +151,13 @@
         New-Item -ItemType Directory -Path $destDir -Force | Out-Null
 
         $entries = Get-GitHubDirectory -Path "skills/$Name"
+        $skillFileFound = $false
         foreach ($entry in $entries) {
+            # リポジトリ側のファイル名は SKILL.md だが、旧名 skill.md も受け付ける
             if ($entry.type -eq "file" -and $entry.name -eq "skill.md") {
                 $outFile = Join-Path $destDir "SKILL.md"
-                Invoke-WebRequest -Uri "$RawRoot/skills/$Name/skill.md" -OutFile $outFile
+                Invoke-WebRequest -Uri "$RawRoot/skills/$Name/$($entry.name)" -OutFile $outFile
+                $skillFileFound = $true
             }
             elseif ($entry.type -eq "dir" -and $entry.name -eq "examples") {
                 $examplesDir = Join-Path $destDir "examples"
@@ -168,6 +171,10 @@
                     }
                 }
             }
+        }
+
+        if (-not $skillFileFound) {
+            Write-Warning "$Name に SKILL.md が見つかりませんでした。"
         }
 
         Write-Host "インストール完了: $Name -> $destDir"

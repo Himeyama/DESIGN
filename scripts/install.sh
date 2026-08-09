@@ -232,8 +232,14 @@ install_skill() {
     local entries
     entries="$(get_github_directory "skills/$name")"
 
-    if echo "$entries" | jq -e 'any(.[]; .type == "file" and .name == "skill.md")' >/dev/null; then
-        curl -fsSL "$RAW_ROOT/skills/$name/skill.md" -o "$dest_dir/SKILL.md"
+    # リポジトリ側のファイル名は SKILL.md だが、旧名 skill.md も受け付ける
+    local skill_file
+    skill_file="$(echo "$entries" | jq -r 'first(.[] | select(.type == "file" and (.name | ascii_downcase) == "skill.md") | .name) // empty')"
+
+    if [[ -n "$skill_file" ]]; then
+        curl -fsSL "$RAW_ROOT/skills/$name/$skill_file" -o "$dest_dir/SKILL.md"
+    else
+        echo "警告: $name に SKILL.md が見つかりませんでした。" >&2
     fi
 
     if echo "$entries" | jq -e 'any(.[]; .type == "dir" and .name == "examples")' >/dev/null; then
