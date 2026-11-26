@@ -84,3 +84,10 @@ void SetPageStatus(string message) => _window?.SetStatus(message);
 
 - `AGENTS.md` と `.github/instructions/` は作業指示を含むため、適用範囲を読んでから作業する。`Package.appxmanifest` と `Properties/PublishProfiles/` はパッケージ化や発行に使われる。不要と決めつけて削除せず、既存の指示や配布方式を維持する。ユーザーの指示が優先される。配布方式を変更した場合は、プロジェクト内の説明が実態と矛盾しないよう必要な箇所を調整する。
 - 新規テンプレートには通常 `WindowsPackageType` がない。HSIS 向けの非パッケージ発行を依頼された場合は、[HSIS の手順](hsis-installer.md) に従い `None` を追加する。既存の MSIX アプリは依頼なく非パッケージに変更しない。
+
+## Windows の対象バージョンと配布方式
+
+- TFM の Windows バージョンはコンパイル時に参照できる Windows API を決める。実行対象の最低 OS は `SupportedOSPlatformVersion`、`TargetPlatformMinVersion` や MSIX マニフェストの設定も確認する。最低 OS より新しい API を呼ぶ場合は実行時の利用可否を確認する。
+- 自己完結型で配布する場合は、Windows App SDK の `WindowsAppSDKSelfContained` と .NET の `SelfContained` をそれぞれ確認する。対象のプラットフォームと RID はプロジェクトや発行プロファイルに合わせ、実際に配布するアーキテクチャの成果物を検証する。
+
+[Windows のバージョンと SDK](https://learn.microsoft.com/en-us/windows/apps/get-started/versioning-overview) · [Windows App SDK の自己完結型配布](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/self-contained-deploy/deploy-self-contained-apps)

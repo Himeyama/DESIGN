@@ -333,6 +333,7 @@ static bool HasItems(int count) => count > 0;
 - アプリの名前空間と .NET の型名は衝突しうる。例えば `Stopwatch` 名前空間で時間計測型を使う場合は `global::System.Diagnostics.Stopwatch stopwatch = new();` のように型を明示する。
 - UI 用の `DispatcherTimer` は `Microsoft.UI.Xaml.DispatcherTimer` を使う。WPF や UWP の API を WinUI 3 に移すときは、対象の Windows App SDK の API と名前空間を確認する。
 - WinUI 3 の `TextBlock` に `FontVariant` はない。数字を等幅に揃える場合は、対応フォントで `Typography.NumeralAlignment="Tabular"` を使い、実際の表示を確認する。
+- WinUI 3 の `WebView2` を使う場合は、[WebView2 の依存関係、初期化、ローカルコンテンツ](references/webview2.md) を参照する。
 
 ## 完了前の確認
 
