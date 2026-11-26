@@ -7,6 +7,8 @@ description: Build or modify C# WinUI 3 Windows desktop apps using a title-free 
 
 C# と WinUI 3 で Windows デスクトップアプリを作る。ユーザーの今回の指示は、以下の既定ルールより優先する。
 
+[サンプルテンプレート](examples/README.md) に、ブランク、WebView2、Monaco Editor の単独でビルドできるプロジェクトを置いている。
+
 ## 作業手順
 
 1. 依頼された機能、入力、操作、結果を確認する。既存プロジェクトがある場合は、まず構成と対象バージョンを確認し、既存の機能や配布方式を維持する。
