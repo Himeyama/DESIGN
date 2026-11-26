@@ -109,7 +109,7 @@ git push origin refs/tags/v0.1.1
 
 ### MainWindow.xaml.cs
 
-`InitializeComponent()` 後にタイトルバーを設定し、初期サイズを 1 回だけ設定する。テンプレートの `App.xaml` と `App.xaml.cs` は維持する。
+`InitializeComponent()` 後にタイトルバーを設定し、初期サイズを 1 回だけ設定する。テンプレートの `App.xaml` と `App.xaml.cs` の起動処理を維持し、未処理例外のログを追加する。[XAML 初期化中のイベント発火](references/xaml-init-events.md#未処理例外の記録) を参照する。
 
 ```csharp
 using System;
@@ -332,6 +332,7 @@ static bool HasItems(int count) => count > 0;
 
 ## WinUI 3 で迷いやすい点
 
+- `SelectedIndex="0"` などの XAML 初期値が `InitializeComponent()` 中に `SelectionChanged` を発火させることがある。ハンドラーがまだ初期化されていない `x:Name` フィールドを参照すると `NullReferenceException` が発生する。初期値の設定とイベント購読は、参照先の準備ができてから行う。`combase.dll` や `0xC0000005` が記録された起動クラッシュも、例外のスタックから調べる。[XAML 初期化中のイベント発火](references/xaml-init-events.md) を参照する。
 - アプリの名前空間と .NET の型名は衝突しうる。例えば `Stopwatch` 名前空間で時間計測型を使う場合は `global::System.Diagnostics.Stopwatch stopwatch = new();` のように型を明示する。
 - UI 用の `DispatcherTimer` は `Microsoft.UI.Xaml.DispatcherTimer` を使う。WPF や UWP の API を WinUI 3 に移すときは、対象の Windows App SDK の API と名前空間を確認する。
 - WinUI 3 の `TextBlock` に `FontVariant` はない。数字を等幅に揃える場合は、対応フォントで `Typography.NumeralAlignment="Tabular"` を使い、実際の表示を確認する。
@@ -341,6 +342,7 @@ static bool HasItems(int count) => count > 0;
 ## 完了前の確認
 
 - ビルドが成功する。生成した実行ファイルを実際に起動し、ウィンドウが表示され、起動直後に終了せず、依頼された主要操作が動く。出力フォルダを別にした場合は、その実行ファイルを確認する。
+- 起動時の初期値やイベント処理を追加・変更した場合は、初期選択と手動での選択変更を試す。新規アプリと起動時クラッシュを修正するアプリでは、`App.UnhandledException` で受け取った例外の情報がログに残ることも確認する。既存の例外ログがあれば利用する。
 - タイトルバーにタイトル・アイコンがなく、ドラッグ、最小化、最大化／復元、閉じるができる。
 - 内容が左から表示され、不要な説明や大きな左余白がない。収まる内容にスクロールバーが出ず、あふれた内容には到達できる。
 - ステータスバーはリサイズ後も下端にあり、文字が収まる。
